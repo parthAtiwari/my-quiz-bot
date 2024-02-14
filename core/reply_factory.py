@@ -35,9 +35,12 @@ def record_current_answer(answer, current_question_id, session):
     '''
     if current_question_id:
         try:
-            if answer.strip() in PYTHON_QUESTION_LIST[current_question_id]['options']:
+            if answer.strip() in PYTHON_QUESTION_LIST[current_question_id-1]['options']:
 
-                session[f"q{current_question_id}"]=str(answer).strip()
+                li=session.get('answers',[])
+                li.append(str(answer).strip())
+                session['answers']=li
+                session.save()
             else:
                 return (False,'Invalid answer')
         except Exception as e:
@@ -51,15 +54,18 @@ def get_next_question(current_question_id):
     Fetches the next question from the PYTHON_QUESTION_LIST based on the current_question_id.
     '''
     if current_question_id is None:
-        current_question_id=0
-    next_question_id = current_question_id + 1
+        current_question_id= 1
+    else:
+        current_question_id+=1
     response = (None,None)
 
     try:
-        question=PYTHON_QUESTION_LIST[next_question_id]
+       
+        question=PYTHON_QUESTION_LIST[current_question_id-1]
         queston_text=question['question_text']
         options="<br>".join(question["options"])
-        response = (queston_text+"<br>" +options, next_question_id)
+       
+        response = (queston_text+"<br>" +options, current_question_id)
         return response
     
     except IndexError:
@@ -75,7 +81,7 @@ def generate_final_response(session):
 
     score=0
     for i in range(len(li:=PYTHON_QUESTION_LIST)):
-        if session.get(f"q{i}")==li[i]['answer']:
+        if session.get('answers')[i]==li[i]['answer']:
             score+=1
     
     return  f"<b>You Scored {score}<b>"
